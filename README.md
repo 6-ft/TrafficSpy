@@ -41,9 +41,9 @@ To run this analyzer effectively, the following tools and environment are requir
 ### 1. Installation
 ```bash
 git clone https://github.com/6-ft/TrafficSpy.git
-cd network-traffic-analyzer
+cd TrafficSpy
 pip install -r requirements.txt 
-python analyzer.py
+python3 analyzer.py
 ```
 ## 👨‍💻 Author
 Pulkit
