@@ -5,18 +5,18 @@ from scapy.all import rdpcap, IP, TCP, UDP, Ether
 from collections import Counter
 
 def show_logo():
-    # ANSI escape sequence for a clickable hyperlink in supporting terminals
+    # ANSI escape sequence for a clickable hyperlink
     link = "https://github.com/6-ft"
     label = "github.com/6-ft"
     hyperlink = f"\u001b]8;;{link}\u001b\\{label}\u001b]8;;\u001b\\"
 
     logo = rf"""
-   _____ _    _          _____  _  __
-  / ____| |  | |   /\   |  __ \| |/ /
- | (___ | |__| |  /  \  | |__) | ' / 
-  \___ \|  __  | / /\ \ |  _  /|  <  
-  ____) | |  | |/ ____ \| | \ \| . \ 
- |_____/|_|  |_/_/    \_\_|  \_\_|\_\
+    _____ _    _          _____  _  __
+   / ____| |  | |   /\   |  __ \| |/ /
+  | (___ | |__| |  /  \  | |__) | ' / 
+   \___ \|  __  | / /\ \ |  _  /|  <  
+   ____) | |  | |/ ____ \| | \ \| . \ 
+  |_____/|_|  |_/_/    \_\_|  \_\_|\_\
     
     >> NETWORK TRAFFIC ANALYZER <<
     Developed by: {hyperlink}
@@ -24,10 +24,9 @@ def show_logo():
     """
     print(logo)
 
-
-
 def get_target():
     files = glob.glob("*.pcap")
+    # Identify user files vs demo
     user_file = [f for f in files if f.lower() != "demo.pcap"]
     
     if user_file:
@@ -37,6 +36,9 @@ def get_target():
     return None, False
 
 def analyze():
+    # Call the logo first!
+    show_logo()
+    
     target, is_demo = get_target()
     if not target:
         print("[-] No file found. Add a .pcap to this folder.")
@@ -57,20 +59,17 @@ def analyze():
                 dst_ip = pkt[IP].dst
                 ip_list.append(dst_ip)
                 
-                # Feature: Port Detection
                 port = ""
                 if TCP in pkt: port = pkt[TCP].dport
                 elif UDP in pkt: port = pkt[UDP].dport
                 
-                # Feature: MAC Address Extraction
                 mac = pkt[Ether].src if Ether in pkt else "Unknown"
-
                 print(f"{src_ip:<18} | {dst_ip:<18} | {port:<6} | {mac}")
 
-        # Feature: Traffic Statistics Summary
-        print("\n" + "="*30)
+        # Summary Statistics
+        print("\n" + "="*35)
         print("   TOP DESTINATION TARGETS")
-        print("="*30)
+        print("="*35)
         stats = Counter(ip_list).most_common(5)
         for ip, count in stats:
             print(f"{ip:<18} : {count} packets")
@@ -78,8 +77,8 @@ def analyze():
         if is_demo:
             print("\n" + "!" * 60)
             print("FINISHED RUNNING DEMO DATA.")
-            print(f"DIRECTIONS: Drop your Wireshark '.pcap' file here to scan it.")
-            print(f"Current Path: {os.getcwd()}")
+            print(f"TO ANALYZE YOUR OWN: Save your Wireshark capture as .pcap")
+            print(f"and drop it into: {os.getcwd()}")
             print("!" * 60)
 
     except Exception as e:
