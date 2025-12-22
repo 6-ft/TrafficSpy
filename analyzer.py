@@ -1,7 +1,7 @@
 import sys
 import os
 import glob
-from scapy.all import rdpcap, IP
+from scapy.all import rdpcap, IP, TCP, UDP, Ether
 from collections import Counter
 
 def show_logo():
@@ -24,46 +24,66 @@ def show_logo():
     """
     print(logo)
 
-import os
-import glob
-from scapy.all import rdpcap, IP
 
-def start_spy():
-    # Find any pcap file that isn't the demo
+
+def get_target():
     files = glob.glob("*.pcap")
     user_file = [f for f in files if f.lower() != "demo.pcap"]
     
     if user_file:
-        target = user_file[0]
-        is_demo = False
+        return user_file[0], False
     elif os.path.exists("demo.pcap"):
-        target = "demo.pcap"
-        is_demo = True
-    else:
-        print("[-] No pcap files found. Drop a .pcap file in this folder.")
+        return "demo.pcap", True
+    return None, False
+
+def analyze():
+    target, is_demo = get_target()
+    if not target:
+        print("[-] No file found. Add a .pcap to this folder.")
         return
 
     try:
         packets = rdpcap(target)
-        print(f"\n[+] TARGET: {target} | TOTAL PACKETS: {len(packets)}")
-        print("-" * 60)
-        print(f"{'SRC IP':<20} | {'DST IP':<20} | {'PROTO'}")
-        print("-" * 60)
+        ip_list = []
+        
+        print(f"\n[+] ANALYZING: {target}")
+        print("-" * 85)
+        print(f"{'SOURCE IP':<18} | {'DEST IP':<18} | {'PORT':<6} | {'MAC ADDRESS'}")
+        print("-" * 85)
 
         for pkt in packets:
             if IP in pkt:
-                proto = pkt.sprintf("%IP.proto%")
-                print(f"{pkt[IP].src:<20} | {pkt[IP].dst:<20} | {proto}")
+                src_ip = pkt[IP].src
+                dst_ip = pkt[IP].dst
+                ip_list.append(dst_ip)
+                
+                # Feature: Port Detection
+                port = ""
+                if TCP in pkt: port = pkt[TCP].dport
+                elif UDP in pkt: port = pkt[UDP].dport
+                
+                # Feature: MAC Address Extraction
+                mac = pkt[Ether].src if Ether in pkt else "Unknown"
+
+                print(f"{src_ip:<18} | {dst_ip:<18} | {port:<6} | {mac}")
+
+        # Feature: Traffic Statistics Summary
+        print("\n" + "="*30)
+        print("   TOP DESTINATION TARGETS")
+        print("="*30)
+        stats = Counter(ip_list).most_common(5)
+        for ip, count in stats:
+            print(f"{ip:<18} : {count} packets")
 
         if is_demo:
             print("\n" + "!" * 60)
             print("FINISHED RUNNING DEMO DATA.")
-            print(f"TO RUN YOUR OWN: Save your Wireshark capture as .pcap (NOT pcapng)")
-            print(f"and drop it into: {os.getcwd()}")
+            print(f"DIRECTIONS: Drop your Wireshark '.pcap' file here to scan it.")
+            print(f"Current Path: {os.getcwd()}")
             print("!" * 60)
 
     except Exception as e:
         print(f"[-] Error: {e}")
 
 if __name__ == "__main__":
-    start_spy()
+    analyze()
