@@ -43,7 +43,7 @@ To run this analyzer effectively, the following tools and environment are requir
 git clone https://github.com/6-ft/TrafficSpy.git
 cd TrafficSpy
 pip install -r requirements.txt 
-python3 analyzer.py
+python analyzer.py
 ```
 ## 👨‍💻 Author
 Pulkit
