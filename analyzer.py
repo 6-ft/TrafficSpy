@@ -24,52 +24,46 @@ def show_logo():
     """
     print(logo)
 
-def get_pcap_file():
-    # Look for all .pcap files
-    all_pcap_files = glob.glob("*.pcap")
-    
-    # Identify user files (anything that isn't named demo.pcap)
-    user_files = [f for f in all_pcap_files if f.lower() != "demo.pcap"]
+import os
+import glob
+from scapy.all import rdpcap, IP
 
-    if user_files:
-        selected_file = user_files[0]
-        print(f"\n[+] User file detected: {selected_file}")
-        return selected_file, True # True means it is a user file
+def start_spy():
+    # Find any pcap file that isn't the demo
+    files = glob.glob("*.pcap")
+    user_file = [f for f in files if f.lower() != "demo.pcap"]
+    
+    if user_file:
+        target = user_file[0]
+        is_demo = False
     elif os.path.exists("demo.pcap"):
-        print("\n[!] No user file found. Running 'demo.pcap' by default...")
-        return "demo.pcap", False # False means it is the demo
+        target = "demo.pcap"
+        is_demo = True
     else:
-        print("\n[X] Error: No .pcap files found at all!")
-        return None, False
-
-def run_analysis():
-    target_file, is_user_file = get_pcap_file()
-    
-    if not target_file:
-        print("Please add a .pcap file to the TrafficSpy folder and restart.")
+        print("[-] No pcap files found. Drop a .pcap file in this folder.")
         return
 
     try:
-        # Load and analyze packets
-        packets = rdpcap(target_file)
-        print(f"[*] Analysis complete. Processed {len(packets)} packets from {target_file}.")
-        
-        # --- YOUR ANALYSIS CODE HERE ---
+        packets = rdpcap(target)
+        print(f"\n[+] TARGET: {target} | TOTAL PACKETS: {len(packets)}")
+        print("-" * 60)
+        print(f"{'SRC IP':<20} | {'DST IP':<20} | {'PROTO'}")
+        print("-" * 60)
 
-        # After the analysis is finished:
-        if not is_user_file:
-            print("\n" + "="*50)
-            print("NOTICE: You just viewed the DEMO analysis.")
-            print("To analyze your own traffic:")
-            print("1. Capture traffic in Wireshark.")
-            print("2. Save it as 'pcap' (not pcapng).")
-            print(f"3. Drop the file into this folder: {os.getcwd()}")
-            print("4. Run this script again.")
-            print("="*50)
+        for pkt in packets:
+            if IP in pkt:
+                proto = pkt.sprintf("%IP.proto%")
+                print(f"{pkt[IP].src:<20} | {pkt[IP].dst:<20} | {proto}")
+
+        if is_demo:
+            print("\n" + "!" * 60)
+            print("FINISHED RUNNING DEMO DATA.")
+            print(f"TO RUN YOUR OWN: Save your Wireshark capture as .pcap (NOT pcapng)")
+            print(f"and drop it into: {os.getcwd()}")
+            print("!" * 60)
 
     except Exception as e:
-        print(f"\n[X] An error occurred while reading {target_file}: {e}")
-        print("Ensure the file is a standard 'pcap' format.")
+        print(f"[-] Error: {e}")
 
 if __name__ == "__main__":
-    run_analysis()
+    start_spy()
